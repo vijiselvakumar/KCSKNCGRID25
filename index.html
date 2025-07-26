@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>KCSKNCGRID 2025 - TRAVERSE</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+    }
+    html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  display: flex;
+  flex-direction: column;
+}
+
+
+     .header {
+      background: url("header.jpg") no-repeat center;
+      background-size: cover;
+      height: 100px;
+      text-align: center;
+      color: #fff;
+      padding: 15px 0;
+    }
+    .fullscreen-modal {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(to right, #ffecd2, #fcb69f);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+      font-size: 1.2rem;
+      color: #333;
+      text-align: center;
+      padding: 20px;
+    }
+    .fullscreen-modal h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+    .fullscreen-modal p {
+      font-size: 1.3rem;
+      max-width: 600px;
+      margin-bottom: 30px;
+    }
+    input {
+      font-size: 1.2rem;
+      padding: 10px;
+    }
+    .main-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, 50px);
+      gap: 4px;
+      margin: 10px;
+    }
+    .cell input {
+      width: 50px;
+      height: 50px;
+      text-align: center;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+    }
+
+    .highlight {
+      background: yellow !important;
+    }
+    .sidebar {
+      margin-left: 90px;
+    }
+    .top-panel {
+      display: flex;
+      justify-content: center;
+      gap: -20px;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      margin-top: 20px;
+      cursor: pointer;
+      background: #ff6f61;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #e2584d;
+    }
+    #timerOverMsg {
+      font-size: 1.5rem;
+      color: red;
+      margin-top: 10px;
+    }
+    #usernameDisplay {
+      font-size: 1.2rem;
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div id="passwordModal" style="
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  background:white;
+  padding:20px;
+  border:2px solid #444;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  z-index:9999;
+  text-align:center;
+">
+  <p>⏰ Time’s up! Enter the password to reveal the answers:</p>
+  <input type="password" id="revealPassword" placeholder="Enter password" />
+  <br><br>
+  <button onclick="checkRevealPassword()">Submit</button>
+</div>
+
+<!-- Instruction Modal -->
+<div class="fullscreen-modal" id="instructionModal">
+  <img src="\header.jpg" alt="Title" style="width: 100%; height: auto; display: block; max-height: 350px; object-fit: cover;">
+  <h1>🎯 Welcome to the Ultimate Crossword Challenge!</h1>
+  <p style="text-align: justify; font-size: 18px; line-height: 1.6;">
+  • Clues will be displayed to help you solve the puzzle.<br>
+  • You have <strong>10 minutes</strong> to complete the entire crossword.<br>
+  • Click on any numbered cell to automatically highlight its corresponding clue.<br>
+  • The cursor will move automatically as you type the answer.<br>
+  • Each correct answer earns you <strong>1 point</strong>. <strong>No negative marks</strong> for wrong answers.<br><br>
+ </p>
+
+  <button id="instructionBtn"> 🎯 Get ready to start!!!... 10</button>
+</div>
+
+<!-- Login Modal -->
+<div class="fullscreen-modal" id="loginModal" style="display:none; background-image: url('poster.jpeg')">
+  <h1>🔐 Login</h1>
+  <input id="usernameInput" type="text" oninput="this.value = this.value.toUpperCase();" placeholder="Username"><br><br>
+  <input id="classInput" type="text" oninput="this.value = this.value.toUpperCase();" placeholder="Classname"><br><br>
+  <input id="passwordInput" type="password" placeholder="Password"><br><br>
+  <button onclick="validateLogin()">Login</button>
+  <p id="loginError" style="color:red;"></p>
+</div>
+
+<!-- Puzzle -->
+ <div class="header"></div>
+<div id="gameArea" style="display:none; background-color:bisque;">
+    
+  <div class="top-panel">
+    <div>⏰ Time: <span id="timer">00:00</span></div>
+    <div>⭐ Score: <span id="score">0</span></div>
+  </div>
+ <div id="currentClueDisplay" style="font-weight:bold; font-size:1.2rem; text-align:center; margin: 10px 0;">
+  Solve this clue!
+</div>
+
+  <div id="timerOverMsg"></div>
+  <div id="usernameDisplay"></div>
+
+  <div class="main-container">
+    <div>
+      <div class="grid" id="puzzleGrid"></div>
+    <!-- <button onclick="checkAnswers()">✔️ Check Answers</button> -->
+    </div>
+    <div class="sidebar">
+      <h3>Across</h3>
+      <ul>
+        <li onclick="highlightClue('A1')">1: Look forward to</li>
+        <li onclick="highlightClue('A2')">2: What a yellow traffic light tells you to do</li>
+        <li onclick="highlightClue('A3')">5: Gen ___ (Kids born in the 2025s)</li>
+        <li onclick="highlightClue('A4')">7: Low in glow</li>
+        <li onclick="highlightClue('A5')">8: What might have you seeing double</li>
+        <li onclick="highlightClue('A6')">9: Number accidentally typed instead of an exclamation point</li>
+        <li onclick="highlightClue('A7')">12: Word with lock or pocket</li>
+        <li onclick="highlightClue('A8')">13: Short instagram video</li>
+      </ul>
+      <h3>Down</h3>
+      <ul>
+        <li onclick="highlightClue('D2')">2: Keeps an eye on time.</li>
+        <li onclick="highlightClue('D7')">3: Devices never miss a moment</li>
+        <li onclick="highlightClue('D1')">4: Conversation opener</li>
+        <li onclick="highlightClue('D3')">5: When you buy me, you save money, because you’re buying a lot at once</li>            
+        <li onclick="highlightClue('D4')">6: Soft metal used in food cans</li>
+        <li onclick="highlightClue('D5')">10: Nothing</li>
+        <li onclick="highlightClue('D6')">11: A historical time period</li>
+     
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  
+  const clueTexts = {
+  A1: "1: Look forward to",
+  A2: "2: what a yellow traffic light tells you to do",
+  A3: "5: Gen ___ (Kids born in the 2025s)",
+  A4: "7: Low in glow",
+  A5: "8: What might have you seeing double",
+  A6: "9: Number accidentally typed instead of an exclamation point",
+  A7: "12: Word with lock or pocket",
+  A8: "13: Short instagram video",
+  D1: "4: Conversation opener",
+  D2: "2: Keeps an eye on time.",
+  D3: "5: When you buy me, you save money,because you’re buying a lot at once.-",
+  D4: "6: Soft metal used in food cans",
+  D5: "10: Nothing",
+  D6: "11: A historical time period",
+  D7: "3: Devices never miss a moment"
+};
+const clueNumbers = {
+  "0,0": 1,
+  "0,1": 2,
+  "0,5": 3,
+  "1,0": 4,
+  "1,2": 5,
+  "1,4": 6,
+  "2,3": 7,
+  "3,1": 8,
+  "3,3": 9,
+  "3,4": 10,
+  "3,5": 11,
+  "4,3": 12,
+  "5,1": 13
+};
+
+const cellHighlightMap = {
+  "0,0": [[0,0], [0,1], [0,2], [0,3], [0,4]],
+  "0,1": [[0,1], [0,2], [0,3], [0,4],[0,1], [1,1], [2,1], [3,1], [4,1]],
+  "0,5": [[0,5], [1,5], [2,5], [3,5], [4,5], [5,5]],
+  "1,0": [[1,0], [2,0], [3,0], [4,0], [5,0]],
+  "1,2": [[1,2], [1,3], [1,4], [1,5], [1,2], [2,2], [3,2], [4,2]],
+  "1,4": [[1,4], [2,4], [3,4]],
+  "2,3": [[2,3], [2,4], [2,5]],
+  "3,1": [[3,1], [3,2], [3,3], [3,4], [3,5]],
+  "3,3": [[3,3], [3,4], [3,5]],
+  "3,4": [[3,4], [4,4], [5,4]],
+  "3,5": [[3,5], [4,5], [5,5]],
+  "4,3": [[4,3], [4,4], [4,5]],
+  "5,1": [[5,1], [5,2], [5,3], [5,4]]
+};
+
+const clueMapping = {
+  A1: [[0,0], [0,1], [0,2], [0,3], [0,4]],
+  A2:[[0,1], [0,2], [0,3], [0,4]],
+  A3: [[1,2], [1,3], [1,4], [1,5]],
+  A4:[[2,3],[2,4],[2,5]],
+  A5:[[3,1], [3,2], [3,3], [3,4],[3,5]],
+  A6:[[3,3], [3,4],[3,5]],
+  A7:[[4,3],[4,4],[4,5]],
+  A8:[[5,1],[5,2],[5,3],[5,4]],
+  D2: [[0,1], [1,1], [2,1], [3,1], [4,1]],
+  D7: [[0,5], [1,5], [2,5], [3,5], [4,5], [5,5]],
+  D1: [[1,0], [2,0], [3,0], [4,0], [5,0]],
+  D3:[[1,2],[2,2],[3,2],[4,2]],
+  D4:[[1,4],[2,4],[3,4]],
+  D5:[[3,4],[4,4],[5,4]],
+  D6:[[3,5], [4,5], [5,5]]
+};
+const cellClueTextMap = {
+  "0,0": ["A1 : Look forward to"],
+  "0,1": ["A2 : What a yellow traffic light tells you to do", "D2 : Keeps an eye on time"],
+  "1,2": ["A5 : Gen ___ (kids born in the 2025s)", "D5 : When you buy me, you save money, because you are buying a lot at once."],
+  "2,3": ["A7 : Low in glow."],
+  "3,1": ["A8 : What might have you seeing double?"],
+  "3,3": ["A9 : Number accidentally typed instead of an exclamation point"],
+  "4,3": ["A12 : Word with lock or pocket"],
+  "5,1": ["A13 : Short instagram video"],
+  "0,5": ["D3 : Devices that never miss a moment"],
+  "1,0": ["D4 : Conversation opener"],
+  "1,4": ["D6 : Soft metal used in food cans"],
+  "3,4": ["D10 : Nothing"],
+  "3,5": ["D11 : A historical time period."]
+};
+
+const reverseLookup = {};
+for (const clue in clueMapping) {
+  clueMapping[clue].forEach(([r, c]) => {
+    const key = `${r},${c}`;
+    if (!reverseLookup[key]) reverseLookup[key] = [];
+    reverseLookup[key].push(clue);
+  });
+}
+
+const answers = {
+  "0,0":"A", "0,1":"W", "0,2":"A", "0,3":"I", "0,4":"T", "0,5":"C",
+  "1,0":"H", "1,1":"A", "1,2":"B", "1,3":"E", "1,4":"T", "1,5":"A",
+  "2,0":"E", "2,1":"T", "2,2":"U", "2,3":"D", "2,4":"I", "2,5":"M",
+  "3,0":"L", "3,1":"C", "3,2":"L", "3,3":"O", "3,4":"N", "3,5":"E",
+  "4,0":"L", "4,1":"H", "4,2":"K", "4,3":"A", "4,4":"I", "4,5":"R",
+  "5,0":"O", "5,1":"R", "5,2":"E", "5,3":"E", "5,4":"L", "5,5":"A"
+};
+
+
+let activeClue = null;
+let seconds = 0;
+let score = 0;
+let timerRunning = true;
+let finalscore=0;
+let solvedClueTracker = {}; // To avoid re-scoring already solved clues
+
+function buildGrid() {
+  const grid = document.getElementById('puzzleGrid');
+  grid.innerHTML = '';
+
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 6; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.position = 'relative';
+
+      const input = document.createElement('input');
+      input.maxLength = 1;
+      input.dataset.row = r;
+      input.dataset.col = c;
+      input.addEventListener('input', () => {
+  autoMove(input);
+
+  const r = parseInt(input.dataset.row);
+  const c = parseInt(input.dataset.col);
+  const key = `${r},${c}`;
+  const clues = reverseLookup[key] || [];
+
+  clues.forEach(clue => {
+    let solved = true;
+
+    clueMapping[clue].forEach(([rr, cc]) => {
+      const k = `${rr},${cc}`;
+      const expected = answers[k];
+      const inp = document.querySelector(`input[data-row="${rr}"][data-col="${cc}"]`);
+
+      if (inp.value.toUpperCase() === expected) {
+        inp.style.backgroundColor = '#c8e6c9'; // Green
+      } else {
+        inp.style.backgroundColor = '#ffcdd2'; // Red
+        solved = false;
+      }
+    });
+
+    // Recalculate score across all clues
+    let solvedClues = 0;
+    Object.keys(clueMapping).forEach(clueKey => {
+      let clueSolved = true;
+      clueMapping[clueKey].forEach(([rr, cc]) => {
+        const k = `${rr},${cc}`;
+        const expected = answers[k];
+        const inp = document.querySelector(`input[data-row="${rr}"][data-col="${cc}"]`);
+        if (inp.value.toUpperCase() !== expected) {
+          clueSolved = false;
+        }
+      });
+      if (clueSolved) solvedClues++;
+    });
+
+    score = solvedClues;
+    document.getElementById('score').textContent = score;
+
+    // 🎉 All clues correct?
+    const totalClues = Object.keys(clueMapping).length;
+    if (solvedClues === totalClues) {
+      timerRunning = false;
+      const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const secs = String(seconds % 60).padStart(2, '0');
+      alert(`🎉 Congratulations! You completed in ${minutes}:${secs} minutes.`);
+      document.getElementById('puzzleGrid').style.display = 'none';
+    }
+  });
+});
+
+
+      // Highlight cells when this input is clicked
+      input.addEventListener('click', () => {
+        highlightByCell(r, c);
+      });
+      
+      // Optional: clue numbers if needed
+      const key = `${r},${c}`;
+      if (clueNumbers[key]) {
+        const clueNumber = document.createElement('div');
+        clueNumber.textContent = clueNumbers[key];
+        clueNumber.style.position = 'absolute';
+        clueNumber.style.top = '2px';
+        clueNumber.style.left = '4px';
+        clueNumber.style.fontSize = '0.6rem';
+        clueNumber.style.fontWeight = 'bold';
+        cell.appendChild(clueNumber);
+      }
+
+      cell.appendChild(input);
+      grid.appendChild(cell);
+    }
+  }
+}
+
+
+let activeCellPath = null;  // Stores currently highlighted cells
+
+function highlightByCell(r, c) {
+  document.querySelectorAll('.cell input').forEach(inp => inp.classList.remove('highlight'));
+
+  const key = `${r},${c}`;
+  const cellsToHighlight = cellHighlightMap[key];
+
+  if (cellsToHighlight) {
+    cellsToHighlight.forEach(([row, col]) => {
+      const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+      if (input) input.classList.add('highlight');
+    });
+  }
+
+  // Fetch clue number (the grid number in small font at top-left)
+  const clueNumber = clueNumbers[key];
+
+  // Fetch clue text (from your clue text map)
+  const clueTextLines = cellClueTextMap[key] || ["Solve this clue!"];
+
+  // Build display text at top
+  if (clueNumber) {
+    document.getElementById('currentClueDisplay').innerHTML = clueTextLines.join('<br>');
+  } else if (clueTextLines.length > 0) {
+    document.getElementById('currentClueDisplay').innerHTML =
+      clueTextLines.join('<br>');
+  } else {
+    document.getElementById('currentClueDisplay').textContent = "No clue assigned to this cell.";
+  }
+}
+
+function autoMove(input) {
+  // Get all highlighted cells in current path (whether across or down)
+  const highlightedCells = Array.from(document.querySelectorAll('.cell input.highlight'));
+
+if (highlightedCells.length === 0) return;
+
+// Check associated clues for current cell
+const r = parseInt(input.dataset.row);
+const c = parseInt(input.dataset.col);
+const key = `${r},${c}`;
+const clues = reverseLookup[key] || [];
+
+clues.forEach(clue => checkClueSolved(clue));
+
+
+  const currentIndex = highlightedCells.indexOf(input);
+
+  if (currentIndex !== -1) {
+    // Move to next cell after typing
+    if (input.value !== '' && currentIndex + 1 < highlightedCells.length) {
+      highlightedCells[currentIndex + 1].focus();
+    }
+  }
+}
+
+function startTimer() {
+  const interval = setInterval(() => {
+    if (!timerRunning) {
+      clearInterval(interval);
+      return;
+    }
+    seconds++;
+    const min = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const sec = String(seconds % 60).padStart(2, '0');
+    document.getElementById('timer').textContent = `${min}:${sec}`;
+
+   if (seconds >= 600) {
+  timerRunning = false;  // Stop timer at 2 minutes
+  downloadResultAsTxt();
+
+  document.querySelectorAll('.cell input').forEach(input => {
+        input.disabled = true;
+      });
+
+  const correctPassword = "1234";  // 🔐 Set your password here
+  const userInput = prompt("⏰ Time's up! Enter password to reveal the answers:");
+
+  if (userInput === null || userInput.trim() === "") {
+    // User clicked cancel or entered nothing
+    document.getElementById('timerOverMsg').textContent = "🔒 Enter the password to reveal the answer.";
+  } else if (userInput === correctPassword) {
+    // ✅ Correct password — reveal answers
+    Object.keys(answers).forEach(key => {
+      const [r, c] = key.split(',').map(Number);
+      const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+      if (input) {
+        input.value = answers[key];
+        input.disabled = true;
+        input.style.backgroundColor = '#e0f7fa'; // Revealed background
+      }
+
+    });
+    document.getElementById('timerOverMsg').textContent = "✅ Answers revealed.";
+  } 
+}
+}, 1000);
+}
+// ?
+function revealCorrectAnswers() {
+  const password = prompt("Enter the password to reveal the answers:");
+
+  // You can change this to any password you want
+  const correctPassword = "1234";
+
+  if (password === correctPassword) {
+    document.querySelectorAll('.cell input').forEach(input => {
+      const r = input.dataset.row;
+      const c = input.dataset.col;
+      const key = `${r},${c}`;
+      const correctAnswer = answers[key] || '';
+
+      input.value = correctAnswer;
+      input.style.backgroundColor = '#d1c4e9';  // Light purple for revealed answers
+      input.disabled = true;
+    });
+  } 
+}
+
+
+function checkClueSolved(clue) {
+  const positions = clueMapping[clue];
+  let allCorrect = true;
+
+  for (let [r, c] of positions) {
+    const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+    const expected = answers[`${r},${c}`];
+    if (!input || input.value.toUpperCase() !== expected) {
+      allCorrect = false;
+      break;
+    }
+  }
+
+  if (allCorrect && !solvedClueTracker[clue]) {
+    score += 1;
+    solvedClueTracker[clue] = true;
+    document.getElementById('score').textContent = score;
+
+    positions.forEach(([r, c]) => {
+      const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+      input.style.backgroundColor = '#c8e6c9';
+    });
+
+    if (Object.keys(solvedClueTracker).length === Object.keys(clueMapping).length) {
+      timerRunning = false;
+      alert(`🎉 All clues solved in ${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}!`);
+      document.getElementById('puzzleGrid').style.display = 'none';
+    }
+  }
+}
+let count = 10;
+const instrBtn = document.getElementById('instructionBtn');
+const countdownInterval = setInterval(() => {
+  count--;
+  instrBtn.textContent = count > 0 ? `Please wait... ${count}` : 'Start';
+  if (count <= 0) {
+    clearInterval(countdownInterval);
+    instrBtn.disabled = false;
+    instrBtn.textContent = 'Start';
+    instrBtn.onclick = () => {
+      document.getElementById('instructionModal').style.display = 'none';
+      document.getElementById('loginModal').style.display = 'flex';
+    };
+  }
+}, 1000);
+
+function validateLogin() {
+  const username = document.getElementById('usernameInput').value.trim();
+  const password = document.getElementById('passwordInput').value.trim();
+  if (username === '') {
+    document.getElementById('loginError').textContent = 'Please enter your name.';
+    return;
+  }
+  if (password !== '2025') {
+    document.getElementById('loginError').textContent = 'Incorrect password.';
+    return;
+  }
+  document.getElementById('loginModal').style.display = 'none';
+  document.getElementById('gameArea').style.display = 'block';
+  document.getElementById('usernameDisplay').textContent = `👤 Player: ${username}`;
+  buildGrid();
+  startTimer();
+}
+function checkRevealPassword() {
+  const inputPassword = document.getElementById('revealPassword').value;
+  const correctPassword = "1234"; // Set your password
+
+  if (inputPassword === correctPassword) {
+    Object.keys(answers).forEach(key => {
+      const [r, c] = key.split(',').map(Number);
+      const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+      if (input) {
+        input.value = answers[key];
+        input.style.backgroundColor = '#e0f7fa';
+      }
+    });
+    document.getElementById('passwordModal').innerHTML = "<p>✅ Answers revealed.</p>";
+  } else {
+    alert("❌ Incorrect password. Try again.");
+  }
+}
+
+function checkAnswers() {
+  let totalScore = 0;
+  let allCorrect = true;
+
+  Object.keys(answers).forEach(key => {
+    const [r, c] = key.split(',').map(Number);
+    const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+    if (input) {
+      const userAnswer = input.value.trim().toUpperCase();
+      if (userAnswer === answers[key]) {
+        input.style.backgroundColor = 'lightgreen';
+        totalScore += 1;
+      } else {
+        input.style.backgroundColor = 'red';
+        allCorrect = false;
+      }
+    }
+  });
+
+  finalScore = totalScore;
+  document.getElementById("score").textContent = finalScore;
+
+  // ✅ Automatically download if all correct and under 2 minutes
+  }
+
+function allAnswersCorrect() {
+  return Object.keys(answers).every(key => {
+    const [r, c] = key.split(',').map(Number);
+    const input = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+    return input && input.value.trim().toUpperCase() === answers[key];
+  });
+}
+let fileDownloaded = false;
+
+function downloadResultAsTxt() {
+if (fileDownloaded) return;
+  fileDownloaded = true;
+ if (seconds >= 600) {
+  timerRunning = false;
+  downloadResultAsTxt(); // Download at 2 minutes timeout
+}
+if (allAnswersCorrect && seconds < 600) {
+    
+    downloadResultAsTxt();
+  }
+ 
+  const name = document.getElementById('usernameInput').value.toUpperCase();
+  const studentClass = document.getElementById('classInput').value.toUpperCase();
+  const timeTaken = document.getElementById('timer').textContent;
+  const score = document.getElementById('score').textContent;
+  //const score = finalScore;
+
+  const content = `Player Name: ${name}\nClass: ${studentClass}\nTime: ${timeTaken}\nScore: ${score}`;
+
+  const blob = new Blob([content], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${name}_result.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+document.addEventListener("DOMContentLoaded", () => {
+    // Request fullscreen on page load
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.webkitRequestFullscreen) {
+      document.documentElement.webkitRequestFullscreen(); // Safari
+    } else if (document.documentElement.msRequestFullscreen) {
+      document.documentElement.msRequestFullscreen(); // IE11
+    }
+  }); 
+</script>
+
+</body>
+</html>
